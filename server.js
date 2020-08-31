@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 app.get('/', mainPageHandiling);
 app.get('/location', locationHandling);
 app.get('/weather', weatherHandiling);
-app.get('/trail', trailsHandiling);
+app.get('/trails', trailsHandiling);
 app.use(errorPage);
 
 // Functions
@@ -44,10 +44,10 @@ function locationHandling(req, res) {
 
 // Weather
 function weatherHandiling(req, res) {
-  const lat = req.query.lat;
-  const lon = req.query.lon;
+  const latitude = req.query.latitude;
+  const longitude = req.query.longitude;
   const weatherAPIKey = process.env.WEATHER_API_KEY;
-  const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${weatherAPIKey}`;
+  const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${latitude}&lon=${longitude}&key=${weatherAPIKey}`;
 
   superAgent.get(url).then((data) => {
     let requiredData = data.body.data.map((item) => {
@@ -61,22 +61,33 @@ function weatherHandiling(req, res) {
 
 function trailsHandiling(req, res) {
   const trailAPIKey = process.env.TRAIL_API_KEY;
-  const lat = req.query.lat;
-  const lon = req.query.lon;
-  const url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&maxDistance=10&key=${trailAPIKey}`;
-  superAgent.get(url).then((data) => {
-    let trailArray = data.body.trails.map((trail) => {
-      return new Trails(trail);
+  const latitude = req.query.latitude;
+  const longitude = req.query.longitude;
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${latitude}&lon=${longitude}&key=${trailAPIKey}`;
+  console.log(url);
+  superAgent
+    .get(url)
+    .then((data) => {
+      let trailArray = data.body.trails.map((trail) => {
+        return new Trails(trail);
+      });
+      console.log(trailArray);
+      res.status(200).send(trailArray);
+    })
+    .catch(() => {
+      errorPage(
+        req,
+        res,
+        'something went wrong in etting the data from locationiq web'
+      );
     });
-    res.status(200).send(trailArray);
-  });
 }
 
 // Error Page
-function errorPage(req, res) {
+function errorPage(req, res, massage = `Sorry,something went wrong`) {
   res.status(500).send({
     status: 500,
-    responseText: `Sorry,something went wrong`,
+    responseText: massage,
   });
 }
 
