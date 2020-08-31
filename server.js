@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 3000;
 app.get('/', mainPageHandiling);
 app.get('/location', locationHandling);
 app.get('/weather', weatherHandiling);
+app.get('/trail', trailsHandiling);
 app.use(errorPage);
 
 // Functions
@@ -43,17 +44,39 @@ function locationHandling(req, res) {
 
 // Weather
 function weatherHandiling(req, res) {
-  // Empty the array each time the page is called;
-  const weatherData = require('./data/weather.json');
+  const lat = req.query.lat;
+  const lon = req.query.lon;
+  const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+  const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${WEATHER_API_KEY}`;
 
-  let requiredData = weatherData.data.map((item) => {
-    return {
-      forecast: item.weather.description,
-      time: item.datetime,
-    };
+  superAgent.get(url).then((data) => {
+    let newArray = data.body.data;
+    let arr = newArray.map((item) => {
+      return new Weather(item);
+    });
+    res.status(200).send(arr);
+    // let wow = JSON.parse(data);
+    // console.log(`This is the data ${wow}`);
+    // let requiredData = JSON.parse(data.body.data).map((item) => {
+    //   return new Weather(item);
+    // });
+    // res.status(200).send(requiredData);
   });
+}
 
-  res.status(200).send(requiredData);
+// Trail
+
+function trailsHandiling(req, res) {
+  const trailAPIKey = process.env.TRAIL_API_KEY;
+  const lat = req.query.lat;
+  const lon = req.query.lon;
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&maxDistance=10&key=${trailAPIKey}`;
+  superAgent.get(url).then((data) => {
+    let trailArray = data.body.trails.map((trail) => {
+      return new Trails(trail);
+    });
+    res.status(200).send(trailArray);
+  });
 }
 
 // Error Page
@@ -75,14 +98,23 @@ function Location(data, cityName) {
 
 // weather Constructor
 
-// Array to containe All Weather Objects
-// Weather.all = [];
+function Weather(data) {
+  this.forecast = data.weather.description;
+  this.time = data.datetime;
+}
 
-// function Weather(data) {
-//   this.forecast = data.weather.description;
-//   this.time = data.datetime;
-//   Weather.all.push(this);
-// }
+function Trails(data) {
+  (this.name = data.name),
+    (this.location = data.location),
+    (this.length = data.length),
+    (this.stars = data.stars),
+    (this.star_votes = data.starVotes),
+    (this.summary = data.summary),
+    (this.trail_url = data.url),
+    (this.conditions = `${data.conditionDetails}, ${data.conditionStatus}`),
+    (this.condition_date = data.conditionDate.split(' ')[0]),
+    (this.condition_time = data.conditionDate.split(' ')[1]);
+}
 
 // Listen on the server
 
