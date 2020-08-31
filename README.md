@@ -4,7 +4,7 @@
 
 ## Overview
 
-A web site to test how we can request data from a JSON file within out project.
+A web site to test how API works
 
 ## Getting Started
 
@@ -25,6 +25,7 @@ A web site to test how we can request data from a JSON file within out project.
 ## Change Log
 
 30-08-2020 - Application now get the data from a folder within the project
+31-08-2020 - Application now use API's to get some data
 
 ## Credits and Collaborations
 
@@ -41,3 +42,15 @@ Start time: 12:50 PM
 Finish time: 2:00 PM
 
 Actual time needed to complete: 1 hour and 10 minutes
+
+### 31-08-2020 Sunday
+
+Number and name of feature: 2) Get the data from API's
+
+Estimate of time needed to complete: 3 hours
+
+Start time: 02:10 PM
+
+Finish time:
+
+Actual time needed to complete:
