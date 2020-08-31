@@ -46,21 +46,14 @@ function locationHandling(req, res) {
 function weatherHandiling(req, res) {
   const lat = req.query.lat;
   const lon = req.query.lon;
-  const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
-  const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${WEATHER_API_KEY}`;
+  const weatherAPIKey = process.env.WEATHER_API_KEY;
+  const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${weatherAPIKey}`;
 
   superAgent.get(url).then((data) => {
-    let newArray = data.body.data;
-    let arr = newArray.map((item) => {
+    let requiredData = data.body.data.map((item) => {
       return new Weather(item);
     });
-    res.status(200).send(arr);
-    // let wow = JSON.parse(data);
-    // console.log(`This is the data ${wow}`);
-    // let requiredData = JSON.parse(data.body.data).map((item) => {
-    //   return new Weather(item);
-    // });
-    // res.status(200).send(requiredData);
+    res.status(200).send(requiredData);
   });
 }
 
