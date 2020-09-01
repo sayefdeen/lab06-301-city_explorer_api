@@ -3,6 +3,7 @@
 // Application Dependencies
 const express = require('express');
 const cors = require('cors');
+const pg = require('pg');
 require('dotenv').config();
 const app = express();
 const superAgent = require('superagent');
@@ -11,6 +12,7 @@ app.use(cors());
 
 // Define Our PORT
 const PORT = process.env.PORT || 3000;
+const client = new pg.Client(process.env.DATABASE_URL);
 
 // Pages Route Definitions
 
@@ -36,9 +38,33 @@ function locationHandling(req, res) {
   let locationAPIKey = process.env.GEOCODE_API_KEY;
   const url = `https://eu1.locationiq.com/v1/search.php?key=${locationAPIKey}&q=${cityData}&format=json`;
 
-  superAgent.get(url).then((data) => {
-    const locationData = new Location(data.body, cityData);
-    res.status(200).send(locationData);
+  let selectAllSQL = `SELECT * FROM locations`;
+  let selectSQL = `SELECT * FROM locations WHERE search_query=$1`;
+  let safeValues = [];
+  client.query(selectAllSQL).then((result) => {
+    if (result.rows.length <= 0) {
+      superAgent.get(url).then((data) => {
+        console.log(`from API`);
+        const locationData = new Location(data.body, cityData);
+        insertLocationInDB(locationData);
+        res.status(200).josn(locationData);
+      });
+    } else {
+      safeValues = [cityData];
+      client.query(selectSQL, safeValues).then((result) => {
+        if (result.rows.length <= 0) {
+          superAgent.get(url).then((data1) => {
+            console.log(`From API Again`);
+            const locationData = new Location(data1.body, cityData);
+            insertLocationInDB(locationData);
+            res.status(200).json(locationData);
+          });
+        } else {
+          console.log('form data base');
+          res.status(200).json(result.rows[0]);
+        }
+      });
+    }
   });
 }
 
@@ -91,6 +117,21 @@ function errorPage(req, res, massage = `Sorry,something went wrong`) {
   });
 }
 
+// Save into DataBase
+
+function insertLocationInDB(obj) {
+  let insertSQL = `INSERT INTO locations (search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4)`;
+  let safeValues = [
+    obj.search_query,
+    obj.formatted_query,
+    obj.latitude,
+    obj.longitude,
+  ];
+  client.query(insertSQL, safeValues).then(() => {
+    console.log('storing data in database');
+  });
+}
+
 // Location Constructor
 
 function Location(data, cityName) {
@@ -122,6 +163,8 @@ function Trails(data) {
 
 // Listen on the server
 
-app.listen(PORT, () => {
-  console.log(`Listining to ${PORT}`);
+client.connect().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Listining to ${PORT}`);
+  });
 });
