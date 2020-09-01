@@ -47,6 +47,7 @@ function locationHandling(req, res) {
         console.log(`from API`);
         const locationData = new Location(data.body, cityData);
         insertLocationInDB(locationData);
+        res.status(200).josn(locationData);
       });
     } else {
       safeValues = [cityData];
@@ -56,11 +57,11 @@ function locationHandling(req, res) {
             console.log(`From API Again`);
             const locationData = new Location(data1.body, cityData);
             insertLocationInDB(locationData);
-            res.status(200).send(`Your data has been saved in dataBase`);
+            res.status(200).json(locationData);
           });
         } else {
           console.log('form data base');
-          res.status(200).json(result.rows);
+          res.status(200).json(result.rows[0]);
         }
       });
     }
