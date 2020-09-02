@@ -22,6 +22,7 @@ app.get('/location', locationHandling);
 app.get('/weather', weatherHandiling);
 app.get('/trails', trailsHandiling);
 app.get('/movies', moviesHandiling);
+// app.get('/yelp', yelpHandiling);
 app.use(errorPage);
 
 // Functions
@@ -129,6 +130,8 @@ function moviesHandiling(req, res) {
       errorPage(req, res, 'Something wrong wiht movies API');
     });
 }
+
+// get Tokens
 
 // Error Page
 function errorPage(req, res, massage = `Sorry,something went wrong`) {
