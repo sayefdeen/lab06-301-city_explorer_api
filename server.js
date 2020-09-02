@@ -114,29 +114,44 @@ function trailsHandiling(req, res) {
 
 // Movies Handler
 
-function moviesHandiling(req, res) {
-  let countryArrayCode = getAllCodes();
+async function moviesHandiling(req, res) {
+  let countryArrayCode = [];
+  let urlC = `https://api.themoviedb.org/3/configuration/countries?api_key=${process.env.MOVIE_API_KEY}`;
+  await superAgent.get(urlC).then((data) => {
+    // console.log(data.body);
+    countryArrayCode = data.body;
+  });
   // Get all the countries Codes and store it in an array
   let formated_query = req.query.formatted_query;
   let countryArray = formated_query.split(',');
   let countryName = countryArray[countryArray.length - 1].trim();
-  // console.log(`This is the array that was called ${countryArrayCode}`);
-  res.status(200).send(countryArrayCode);
 
-  // let countryCode = countryArrayCode
-  //   .filter((obj) => {
-  //     return obj.english_name === countryName;
-  //   })
-  //   .map((item) => {
-  //     return item.iso_3166_1;
-  //   });
-  // console.log(countryCode);
-  // const moviesAPIKey = process.env.MOVIE_API_KEY;
-  // const url = `https://api.themoviedb.org/3/discover/movie?api_key=${moviesAPIKey}&region=${countryName}&include_adult=false&include_video=false&page=1`;
-  // console.log(url);
-  // superAgent.get(url).then(data=>{
-  //   let newMovie = new
-  // });
+  let countryCode = countryArrayCode
+    .filter((obj) => {
+      return obj.english_name === countryName;
+    })
+    .map((item) => {
+      return item.iso_3166_1;
+    });
+  const moviesAPIKey = process.env.MOVIE_API_KEY;
+  const url = `https://api.themoviedb.org/3/discover/movie?api_key=${moviesAPIKey}&region=${countryCode}&include_adult=false&include_video=false&page=1`;
+  console.log(url);
+  await superAgent
+    .get(url)
+    .then((data) => {
+      let moviesArray = data.body.results.map((item) => {
+        console.log(item);
+        return new Movies(item);
+      });
+      res.status(200).json(moviesArray);
+    })
+    .catch(() => {
+      errorPage(
+        req,
+        res,
+        'something went wrong in getting the data from movies web'
+      );
+    });
 }
 
 // Error Page
@@ -150,14 +165,6 @@ function errorPage(req, res, massage = `Sorry,something went wrong`) {
 // Array for all countries Codes
 
 // get All countries Codes
-
-function getAllCodes() {
-  let url = `https://api.themoviedb.org/3/configuration/countries?api_key=${process.env.MOVIE_API_KEY}`;
-  return superAgent.get(url).then((data) => {
-    // console.log(data.body);
-    return data.body;
-  });
-}
 
 // Save into DataBase
 
@@ -201,6 +208,16 @@ function Trails(data) {
     (this.conditions = `${data.conditionDetails}, ${data.conditionStatus}`),
     (this.condition_date = data.conditionDate.split(' ')[0]),
     (this.condition_time = data.conditionDate.split(' ')[1]);
+}
+
+function Movies(data) {
+  (this.title = data.title),
+    (this.overview = data.overview),
+    (this.average_votes = data.vote_average),
+    (this.total_votes = data.vote_count),
+    (this.image_url = `https://image.tmdb.org/t/p/w500${data.poster_path}`),
+    (this.popularity = data.popularity),
+    (this.released_on = data.release_date);
 }
 
 // Listen on the server
