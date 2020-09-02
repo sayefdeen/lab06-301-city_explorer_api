@@ -20,6 +20,7 @@ app.get('/', mainPageHandiling);
 app.get('/location', locationHandling);
 app.get('/weather', weatherHandiling);
 app.get('/trails', trailsHandiling);
+app.get('/movies', moviesHandiling);
 app.use(errorPage);
 
 // Functions
@@ -48,6 +49,7 @@ function locationHandling(req, res) {
         const locationData = new Location(data.body, cityData);
         insertLocationInDB(locationData);
         res.status(200).josn(locationData);
+        // res.status(200).json(data.body);
       });
     } else {
       safeValues = [cityData];
@@ -57,7 +59,8 @@ function locationHandling(req, res) {
             console.log(`From API Again`);
             const locationData = new Location(data1.body, cityData);
             insertLocationInDB(locationData);
-            res.status(200).json(locationData);
+            res.status(200).json(data1);
+            // res.status(200).json(locationData);
           });
         } else {
           console.log('form data base');
@@ -109,11 +112,50 @@ function trailsHandiling(req, res) {
     });
 }
 
+// Movies Handler
+
+function moviesHandiling(req, res) {
+  let countryArrayCode = getAllCodes();
+  // Get all the countries Codes and store it in an array
+  let formated_query = req.query.formatted_query;
+  let countryArray = formated_query.split(',');
+  let countryName = countryArray[countryArray.length - 1].trim();
+  // console.log(`This is the array that was called ${countryArrayCode}`);
+  res.status(200).send(countryArrayCode);
+
+  // let countryCode = countryArrayCode
+  //   .filter((obj) => {
+  //     return obj.english_name === countryName;
+  //   })
+  //   .map((item) => {
+  //     return item.iso_3166_1;
+  //   });
+  // console.log(countryCode);
+  // const moviesAPIKey = process.env.MOVIE_API_KEY;
+  // const url = `https://api.themoviedb.org/3/discover/movie?api_key=${moviesAPIKey}&region=${countryName}&include_adult=false&include_video=false&page=1`;
+  // console.log(url);
+  // superAgent.get(url).then(data=>{
+  //   let newMovie = new
+  // });
+}
+
 // Error Page
 function errorPage(req, res, massage = `Sorry,something went wrong`) {
   res.status(500).send({
     status: 500,
     responseText: massage,
+  });
+}
+
+// Array for all countries Codes
+
+// get All countries Codes
+
+function getAllCodes() {
+  let url = `https://api.themoviedb.org/3/configuration/countries?api_key=${process.env.MOVIE_API_KEY}`;
+  return superAgent.get(url).then((data) => {
+    // console.log(data.body);
+    return data.body;
   });
 }
 
