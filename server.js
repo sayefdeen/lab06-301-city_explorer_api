@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 'use strict';
 
 // Application Dependencies
@@ -93,14 +94,12 @@ function trailsHandiling(req, res) {
   const latitude = req.query.latitude;
   const longitude = req.query.longitude;
   const url = `https://www.hikingproject.com/data/get-trails?lat=${latitude}&lon=${longitude}&key=${trailAPIKey}`;
-  console.log(url);
   superAgent
     .get(url)
     .then((data) => {
       let trailArray = data.body.trails.map((trail) => {
         return new Trails(trail);
       });
-      console.log(trailArray);
       res.status(200).send(trailArray);
     })
     .catch(() => {
@@ -114,43 +113,20 @@ function trailsHandiling(req, res) {
 
 // Movies Handler
 
-async function moviesHandiling(req, res) {
-  let countryArrayCode = [];
-  let urlC = `https://api.themoviedb.org/3/configuration/countries?api_key=${process.env.MOVIE_API_KEY}`;
-  await superAgent.get(urlC).then((data) => {
-    // console.log(data.body);
-    countryArrayCode = data.body;
-  });
-  // Get all the countries Codes and store it in an array
-  let formated_query = req.query.formatted_query;
-  let countryArray = formated_query.split(',');
-  let countryName = countryArray[countryArray.length - 1].trim();
-
-  let countryCode = countryArrayCode
-    .filter((obj) => {
-      return obj.english_name === countryName;
-    })
-    .map((item) => {
-      return item.iso_3166_1;
-    });
+function moviesHandiling(req, res) {
+  let formated_query = req.query.search_query;
   const moviesAPIKey = process.env.MOVIE_API_KEY;
-  const url = `https://api.themoviedb.org/3/discover/movie?api_key=${moviesAPIKey}&region=${countryCode}&include_adult=false&include_video=false&page=1`;
-  console.log(url);
-  await superAgent
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${moviesAPIKey}&query=${formated_query}&page=1`;
+  superAgent
     .get(url)
     .then((data) => {
-      let moviesArray = data.body.results.map((item) => {
-        console.log(item);
-        return new Movies(item);
+      let moviesArray = data.body.results.map((movie) => {
+        return new Movies(movie);
       });
       res.status(200).json(moviesArray);
     })
     .catch(() => {
-      errorPage(
-        req,
-        res,
-        'something went wrong in getting the data from movies web'
-      );
+      errorPage(req, res, 'Something wrong wiht movies API');
     });
 }
 
