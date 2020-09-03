@@ -22,7 +22,7 @@ app.get('/location', locationHandling);
 app.get('/weather', weatherHandiling);
 app.get('/trails', trailsHandiling);
 app.get('/movies', moviesHandiling);
-// app.get('/yelp', yelpHandiling);
+app.get('/yelp', yelpHandiling);
 app.use(errorPage);
 
 // Functions
@@ -131,7 +131,29 @@ function moviesHandiling(req, res) {
     });
 }
 
-// get Tokens
+// Yelp
+
+function yelpHandiling(req, res) {
+  let lat = req.query.latitude;
+  let lon = req.query.longitude;
+  let url = `https://api.yelp.com/v3/businesses/search?term=restaurants&latitude=${lat}&longitude=${lon}`;
+  console.log(url);
+  superAgent
+    .get(url)
+    .set({
+      Authorization: 'Bearer ' + process.env.YELP_API_KEY,
+    })
+    .accept('application/json')
+    .then((data) => {
+      let yelpArray = data.body.businesses.map((resturant) => {
+        return new Yelp(resturant);
+      });
+      res.status(200).json(yelpArray);
+    })
+    .catch(() => {
+      errorPage(req, res, 'Somthing Went Error in Yelp API');
+    });
+}
 
 // Error Page
 function errorPage(req, res, massage = `Sorry,something went wrong`) {
@@ -140,10 +162,6 @@ function errorPage(req, res, massage = `Sorry,something went wrong`) {
     responseText: massage,
   });
 }
-
-// Array for all countries Codes
-
-// get All countries Codes
 
 // Save into DataBase
 
@@ -176,6 +194,8 @@ function Weather(data) {
   this.time = data.datetime;
 }
 
+// Trails API Constructor
+
 function Trails(data) {
   (this.name = data.name),
     (this.location = data.location),
@@ -189,6 +209,8 @@ function Trails(data) {
     (this.condition_time = data.conditionDate.split(' ')[1]);
 }
 
+// Movies API Constructor
+
 function Movies(data) {
   (this.title = data.title),
     (this.overview = data.overview),
@@ -197,6 +219,14 @@ function Movies(data) {
     (this.image_url = `https://image.tmdb.org/t/p/w500${data.poster_path}`),
     (this.popularity = data.popularity),
     (this.released_on = data.release_date);
+}
+
+function Yelp(data) {
+  (this.name = data.name),
+    (this.image_url = data.image_url),
+    (this.price = data.price),
+    (this.rating = data.rating),
+    (this.url = data.url);
 }
 
 // Listen on the server
