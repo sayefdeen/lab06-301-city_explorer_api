@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 'use strict';
 
 // Application Dependencies
@@ -20,6 +21,8 @@ app.get('/', mainPageHandiling);
 app.get('/location', locationHandling);
 app.get('/weather', weatherHandiling);
 app.get('/trails', trailsHandiling);
+app.get('/movies', moviesHandiling);
+app.get('/yelp', yelpHandiling);
 app.use(errorPage);
 
 // Functions
@@ -48,6 +51,7 @@ function locationHandling(req, res) {
         const locationData = new Location(data.body, cityData);
         insertLocationInDB(locationData);
         res.status(200).josn(locationData);
+        // res.status(200).json(data.body);
       });
     } else {
       safeValues = [cityData];
@@ -57,7 +61,8 @@ function locationHandling(req, res) {
             console.log(`From API Again`);
             const locationData = new Location(data1.body, cityData);
             insertLocationInDB(locationData);
-            res.status(200).json(locationData);
+            res.status(200).json(data1);
+            // res.status(200).json(locationData);
           });
         } else {
           console.log('form data base');
@@ -90,14 +95,12 @@ function trailsHandiling(req, res) {
   const latitude = req.query.latitude;
   const longitude = req.query.longitude;
   const url = `https://www.hikingproject.com/data/get-trails?lat=${latitude}&lon=${longitude}&key=${trailAPIKey}`;
-  console.log(url);
   superAgent
     .get(url)
     .then((data) => {
       let trailArray = data.body.trails.map((trail) => {
         return new Trails(trail);
       });
-      console.log(trailArray);
       res.status(200).send(trailArray);
     })
     .catch(() => {
@@ -106,6 +109,49 @@ function trailsHandiling(req, res) {
         res,
         'something went wrong in etting the data from locationiq web'
       );
+    });
+}
+
+// Movies Handler
+
+function moviesHandiling(req, res) {
+  let formated_query = req.query.search_query;
+  const moviesAPIKey = process.env.MOVIE_API_KEY;
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${moviesAPIKey}&query=${formated_query}&page=1`;
+  superAgent
+    .get(url)
+    .then((data) => {
+      let moviesArray = data.body.results.map((movie) => {
+        return new Movies(movie);
+      });
+      res.status(200).json(moviesArray);
+    })
+    .catch(() => {
+      errorPage(req, res, 'Something wrong wiht movies API');
+    });
+}
+
+// Yelp
+
+function yelpHandiling(req, res) {
+  let lat = req.query.latitude;
+  let lon = req.query.longitude;
+  let url = `https://api.yelp.com/v3/businesses/search?term=restaurants&latitude=${lat}&longitude=${lon}`;
+  console.log(url);
+  superAgent
+    .get(url)
+    .set({
+      Authorization: 'Bearer ' + process.env.YELP_API_KEY,
+    })
+    .accept('application/json')
+    .then((data) => {
+      let yelpArray = data.body.businesses.map((resturant) => {
+        return new Yelp(resturant);
+      });
+      res.status(200).json(yelpArray);
+    })
+    .catch(() => {
+      errorPage(req, res, 'Somthing Went Error in Yelp API');
     });
 }
 
@@ -148,6 +194,8 @@ function Weather(data) {
   this.time = data.datetime;
 }
 
+// Trails API Constructor
+
 function Trails(data) {
   (this.name = data.name),
     (this.location = data.location),
@@ -159,6 +207,26 @@ function Trails(data) {
     (this.conditions = `${data.conditionDetails}, ${data.conditionStatus}`),
     (this.condition_date = data.conditionDate.split(' ')[0]),
     (this.condition_time = data.conditionDate.split(' ')[1]);
+}
+
+// Movies API Constructor
+
+function Movies(data) {
+  (this.title = data.title),
+    (this.overview = data.overview),
+    (this.average_votes = data.vote_average),
+    (this.total_votes = data.vote_count),
+    (this.image_url = `https://image.tmdb.org/t/p/w500${data.poster_path}`),
+    (this.popularity = data.popularity),
+    (this.released_on = data.release_date);
+}
+
+function Yelp(data) {
+  (this.name = data.name),
+    (this.image_url = data.image_url),
+    (this.price = data.price),
+    (this.rating = data.rating),
+    (this.url = data.url);
 }
 
 // Listen on the server
